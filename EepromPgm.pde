@@ -36,9 +36,8 @@ void storeCalibratedAnalogs(){
   EEPROMWriteInt(64, CalibHigh.y);
 }
 void readSettings(){
-  ledsOn = EEPROM.read(40);
-  transmitMode = EEPROM.read(41);
-  transmitRate = EEPROMReadInt(48);
+  display_brightness = EEPROMReadInt(46);
+  transmit_rate = EEPROMReadInt(48);
 
   CalibLow.th = EEPROMReadInt(50);
   CalibLow.ya = EEPROMReadInt(52);
@@ -48,22 +47,5 @@ void readSettings(){
   CalibHigh.ya = EEPROMReadInt(60);
   CalibHigh.x = EEPROMReadInt(62);
   CalibHigh.y = EEPROMReadInt(64);
-}
-
-
-void writeDefaultSettings(){
-  EEPROM.write(40,0);      //ledsOn
-  EEPROM.write(41,1);      //transmitMode
-  EEPROMWriteInt(48,100);  //transmitRate
-  EEPROMWriteInt(50,589);  //CalibLow.th
-  EEPROMWriteInt(52,407);  //CalibLow.ya
-  EEPROMWriteInt(54,405);  //CalibLow.x
-  EEPROMWriteInt(56,607);  //CalibLow.y
-  EEPROMWriteInt(58,436);  //CalibHigh.th
-  EEPROMWriteInt(60,612);  //CalibHigh.ya
-  EEPROMWriteInt(62,616);  //CalibHigh.x
-  EEPROMWriteInt(64,407);  //CalibHigh.y
-  
-  readSettings(); //now load them
 }
 
