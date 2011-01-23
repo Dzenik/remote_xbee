@@ -9,7 +9,7 @@ void print_standby_display(OSHANDLES * osHandles){
 	printPGMStr(str_standby_mode);
 	lcd.setCursor(0,1);
 	switch (ui_x_nav){
-		case 0:
+		/*case 0:
 		lcd.print("pch.P: ");
 		lcd.print(osHandles->Telemetry.pid_values[0]/10);
 		lcd.print("  ");
@@ -23,7 +23,8 @@ void print_standby_display(OSHANDLES * osHandles){
 		lcd.print("ya.P: ");
 		lcd.print(osHandles->Telemetry.pid_values[4]/10);
 		lcd.print("  ");
-		break;
+		break;*/
+		default:
 		case 3:
 		lcd.print("t: ");
 		lcd.print(osHandles->current_analogs.th);
@@ -42,59 +43,41 @@ void print_standby_display(OSHANDLES * osHandles){
 		ui_x_nav--;
 		delay(200);
 	}
-
-/*
-	connectionEstablished = 0;	// just being sure we don't go back to transmit and think it is
-	if (standbyDisplayState == 1)
-		printValues( Values );
-	else {
-		lcd.setCursor(0,0);
-		printPGMStr(strTransMode[ limit(transmitMode,0,1) ]);
-		lcd.setCursor(0,1);
-		lcd.print("sent:");
-		lcd.print(packetsSent);
-
-		lcd.print(" m:");
-		lcd.print(standbyDisplayState);
-	}
-
-	//// horizontal navigation ////
-	if ((Values->x > ScaleRange(60)) && (standbyDisplayState <2)){
-		standbyDisplayState++;
-		delay(200);
-		lcd.clear();
-	}
-	if ((Values->x < ScaleRange(40)) && (standbyDisplayState >0)){
-		standbyDisplayState--;
-		delay(200);
-	}
-*/
 }
 
 
 
 prog_char str_transmit_mode[] PROGMEM =		"Transmit Mode   ";
-prog_char str_trans_no_comm[] PROGMEM =		" comm !estblshd ";
+prog_char str_sett_mismatch[] PROGMEM =		"  data mismatch ";
+prog_char str_no_comm[] PROGMEM =			"  no comm       ";
+prog_char str_settings_OK[] PROGMEM =		"   settings OK  ";
 
 void print_flying_display(OSHANDLES * osHandles){
 	lcd.setCursor(0,0);
 	printPGMStr(str_transmit_mode);
 	lcd.setCursor(0,1);
-	if (osHandles->Telemetry.just_updated == PIDs_ARE_CURRENT) {
+	
+	if (osHandles->last_mode != TRANSMITTING) { //we just started transmitting then.
+		osHandles->quad_settings_status = NO_COMM_YET;
+		send_quadcopter_settings();
+		send_byte_packet(SETTINGS_COMM,(uint8_t) 'p'); //send request for pid values.
+		return;
+	}
+	
+	if (osHandles->quad_settings_status == CORRECT_SETTINGS) {
 		//communication established, PIDs are correct
-		lcd.print( osHandles->Telemetry.pid_values[0]/10 );
-		lcd.print( ' ' );
-		lcd.print( osHandles->Telemetry.pid_values[3]/10 );
-		lcd.print("      ");
+		printPGMStr(str_settings_OK);
 	}
 	else { 
-		if (!((millis()/300)%4)) { //keep resending values, not to often though.
-			send_some_int16s(SETTINGS_COMM,RECIEVE_PIDS,osHandles->Telemetry.pid_values,9);
-			++osHandles->Telemetry.just_updated;
+		if (!((millis()/300)%4)) { //keep requesting values, not to often though.
+			send_byte_packet(SETTINGS_COMM,(uint8_t) 'p'); //send request for pid values.
+			//++osHandles->Telemetry.just_updated;
 		}
-		lcd.print(" !C -> [sent");
-		lcd.print( (osHandles->Telemetry.just_updated)-PIDs_CHANGED );
-		lcd.print("]");
+		if (osHandles->quad_settings_status == SETTINGS_MISMATCH) printPGMStr(str_sett_mismatch);
+		else printPGMStr(str_no_comm);
+		//lcd.print(" [sent");
+		//lcd.print( (osHandles->Telemetry.just_updated)-PIDs_CHANGED );
+		//lcd.print("]    ");
 	}
 }
 

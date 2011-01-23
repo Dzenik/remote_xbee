@@ -28,6 +28,7 @@ void loop(){
 		/*---- button control ----*/
 		/*------------------------*/
 		byte pushbutton_read = digitalRead(transmit_button);
+		osHandles.last_mode = osHandles.mode;
 		if (pushbutton_read && !last_button){ //leading edge triggered
 			last_button = current_time;
 		}
@@ -46,12 +47,8 @@ void loop(){
 					send_byte_packet(SETTINGS_COMM,(uint8_t) 'X');//send kill signal
 					send_byte_packet(SETTINGS_COMM,(uint8_t) 'X');//send kill signal
 				}
-				else if (osHandles.mode == STANDBY) { 
-					osHandles.mode = TRANSMITTING;
-					lcd.clear();
-					send_some_int16s(SETTINGS_COMM,SEND_PIDS,osHandles.Telemetry.pid_values,9);
-					osHandles.Telemetry.just_updated = PIDs_CHANGED;
-				}
+				else if (osHandles.mode == STANDBY) 
+					{ osHandles.mode = TRANSMITTING; lcd.clear(); }
 				else { osHandles.mode = STANDBY; lcd.clear(); }
 			}
 			last_button = 0;

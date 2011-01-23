@@ -28,4 +28,10 @@ void store_int16_array_eeprom(int16_t * arry, uint8_t length, uint8_t beginning_
 void retrive_int16_array_eeprom(int16_t * arry, uint8_t length, uint8_t beginning_address);
 
 
+/*-------- quad settings area ---------*/
+void send_quadcopter_settings();
+void store_pid_to_eeprom(uint8_t which_pid, int16_t what_value);
+int16_t get_pid_from_eeprom(uint8_t which_pid );
+uint8_t compare_quad_PIDs_to_eeprom(int16_t * recived_pids);
+
 #endif

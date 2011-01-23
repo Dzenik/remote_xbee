@@ -28,11 +28,11 @@ typedef struct  {
 
 /*-- for PID storage --*/
 #define NUM_PID_VALUES 9 //how many PID int16_t's there are
-//just_updated meanings
-#define NO_PIDs_RECIEVED 0
-#define PIDs_ARE_CURRENT 1 //if quad and remote are in sync (should be at least)
-#define PIDs_CHANGED 2     //used if PIDs are changed locally, not on quad yet.
-// if just_updated is > PIDs_CHANGED then we're trying to send values to quad
+
+//for quad_settings_status
+#define NO_COMM_YET 0
+#define CORRECT_SETTINGS 1
+#define SETTINGS_MISMATCH 2
 
 //controller mode declerations
 #define STANDBY 0
@@ -42,10 +42,11 @@ typedef struct  {
 
 typedef struct
 {
-	struct {
+	/*struct {
 		int16_t pid_values[NUM_PID_VALUES];
 		uint8_t just_updated;
-	} Telemetry;
+	} Telemetry;*/
+	uint8_t quad_settings_status;
 
 	Sticks current_analogs;
 	
@@ -55,7 +56,7 @@ typedef struct
 	
 	uint16_t transmit_rate;
 	
-	uint8_t mode;
+	uint8_t mode, last_mode;
 
 }OSHANDLES;
 

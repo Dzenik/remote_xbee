@@ -11,9 +11,10 @@ prog_char menu_0[] PROGMEM =   " -PID adjust    ";
 prog_char menu_1[] PROGMEM =   " -zero sensors  ";
 prog_char menu_2[] PROGMEM =   " -fancy startup ";
 prog_char menu_3[] PROGMEM =   " -reset eeprom  ";
-prog_char menu_4[] PROGMEM =   " -transmit rate ";
-prog_char menu_5[] PROGMEM =   " -lcd brightness";
-PGM_P PROGMEM menuStrings[] = {menu_0, menu_1, menu_2, menu_3, menu_4, menu_5 };
+prog_char menu_4[] PROGMEM =   " -quad telem mode";
+prog_char menu_5[] PROGMEM =   " -transmit rate ";
+prog_char menu_6[] PROGMEM =   " -lcd brightness";
+PGM_P PROGMEM menuStrings[] = {menu_0, menu_1, menu_2, menu_3, menu_4, menu_5, menu_6 };
 const byte n_choices = sizeof(menuStrings) / sizeof(char *) - 1;
 
 //quadcopter adjust menu
@@ -67,53 +68,23 @@ void print_menu_display(OSHANDLES * osHandles){
 					max_y_nav = 10000;
 					min_y_nav = 0;
 					if (last_menu_x_nav != menu_x_nav)
-						{ menu_y_nav[2] = osHandles->Telemetry.pid_values[menu_y_nav[1]]/10; }
+						{ menu_y_nav[2] = get_pid_from_eeprom(menu_y_nav[1]); }
 					lcd.setCursor(0,1);
 					lcd.print(" ");
 					lcd_print_float_1(menu_y_nav[2]);
-					lcd.print(" was");
-					lcd_print_float_1(osHandles->Telemetry.pid_values[menu_y_nav[1]]/10);
-					osHandles->Telemetry.just_updated = PIDs_CHANGED;
+					//lcd.print(" was");
+					//lcd_print_float_1(osHandles->Telemetry.pid_values[menu_y_nav[1]]/10);
 				}
 				else if (menu_x_nav == 3){
-					if (last_menu_x_nav == 2) { //save values.
-						osHandles->Telemetry.pid_values[menu_y_nav[1]] = menu_y_nav[2]*10;
-						store_int16_array_eeprom( osHandles->Telemetry.pid_values, NUM_PID_VALUES, PID_VALS_START_ADDR);
-					}
-					lcd.setCursor(0,0);
-					printPGMStr(pid_adj_strings[menu_y_nav[1]]);
-					lcd.setCursor(0,1);
+					store_pid_to_eeprom(menu_y_nav[1], menu_y_nav[2]);
 					
-					//waiting for confirmation of sent values.
-					if ( osHandles->Telemetry.just_updated >= PIDs_CHANGED ){ 
-						if (!((millis()/300)%4)) { //keep resending values, not to often though.
-							send_some_int16s(SETTINGS_COMM,RECIEVE_PIDS,osHandles->Telemetry.pid_values,9);
-							++osHandles->Telemetry.just_updated;
-						}
-						lcd.print(" ->");
-						lcd_print_float_1(osHandles->Telemetry.pid_values[menu_y_nav[1]]/10);
-						lcd.print(" [sent");
-						lcd.print( (osHandles->Telemetry.just_updated)-PIDs_CHANGED );
-						lcd.print("]");
-						if ( ((osHandles->Telemetry.just_updated)-PIDs_CHANGED) > 3) {
-							osHandles->Telemetry.just_updated = PIDs_CHANGED;
-							menu_y_nav[0] = 0;
-							menu_y_nav[1] = 0;
-							menu_y_nav[2] = 0;
-							menu_x_nav = 0;
-						}
-					}
-					//successfully sent and recieved new values
-					else if (osHandles->Telemetry.just_updated == PIDs_ARE_CURRENT) {
-						printPGMStr(success);
-						delay(1000);
-						menu_y_nav[0] = 0;
-						menu_y_nav[1] = 0;
-						menu_y_nav[2] = 0;
-						menu_x_nav = 0;
-						return;
-					}
-					
+					printPGMStr(success);
+					delay(1000);
+					menu_y_nav[0] = 0;
+					menu_y_nav[1] = 0;
+					menu_y_nav[2] = 0;
+					menu_x_nav = 0;
+					return;					
 				}
 				
 				break;
@@ -142,7 +113,13 @@ void print_menu_display(OSHANDLES * osHandles){
 				osHandles->mode = STANDBY;
 				break;
 			}
-			case 4:  //adjust transmit rate
+			case 4:  //toggle quad telem mode
+			{
+				send_byte_packet(SETTINGS_COMM,(uint8_t) 'r');
+				menu_x_nav = 0;
+				break;
+			}
+			case 5:  //adjust transmit rate
 			{
 				max_y_nav = 10000;
 				min_y_nav = 0;
@@ -167,7 +144,7 @@ void print_menu_display(OSHANDLES * osHandles){
 				}
 				break;
 				}
-			case 5:  //adjust display brightness
+			case 6:  //adjust display brightness
 			{
 				max_y_nav = 255/8;
 				min_y_nav = 0;
