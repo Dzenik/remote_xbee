@@ -19,12 +19,14 @@ char* statusBar(int num255,char * output,char block,char point, char backed){
 	return output;
 }
 
-Sticks getControls(){
+
+//osHandles->calib_low_vals replaces CalibLow
+Sticks getControls(OSHANDLES * osHandles){
 	Sticks NewAnalogReadings;
-	NewAnalogReadings.th = limit(map(analogRead(thAnalogPin),CalibLow.th,CalibHigh.th,LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);  //throttle
-	NewAnalogReadings.ya = limit(map(analogRead(yaAnalogPin),CalibLow.ya,CalibHigh.ya,LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);  //yaw
-	NewAnalogReadings.y  = limit(map(analogRead(yAnalogPin),CalibLow.y,CalibHigh.y,LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);   //pitch
-	NewAnalogReadings.x  = limit(map(analogRead(xAnalogPin),CalibLow.x,CalibHigh.x,LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);   //roll
+	NewAnalogReadings.th = limit(map(analogRead(thAnalogPin),osHandles->calib_low_vals[0],osHandles->calib_high_vals[0],LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);  //throttle
+	NewAnalogReadings.ya = limit(map(analogRead(yaAnalogPin),osHandles->calib_low_vals[1],osHandles->calib_high_vals[1],LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);  //yaw
+	NewAnalogReadings.y  = limit(map(analogRead(yAnalogPin),osHandles->calib_low_vals[3],osHandles->calib_high_vals[3],LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);   //pitch
+	NewAnalogReadings.x  = limit(map(analogRead(xAnalogPin),osHandles->calib_low_vals[2],osHandles->calib_high_vals[2],LOWERLIMIT,UPPERLIMIT),LOWERLIMIT,UPPERLIMIT);   //roll
 
 	return NewAnalogReadings;
 }

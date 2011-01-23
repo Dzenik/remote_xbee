@@ -2,7 +2,7 @@
 //#include <math.h>
 
 
-void readSerialCommand(){
+void readSerialCommand(OSHANDLES * osHandles){
 	// Check for serial message
 	if (Serial.available()) {
 		uint8_t* packet = getSerialPacket();
@@ -13,8 +13,8 @@ void readSerialCommand(){
 				{
 					case SEND_PIDS: //recieve the PID values sent by the quad.
 					{
-						decode_some_int16s( packet+5, telemetry.pid_values, 9);
-						telemetry.just_updated = 1;
+						decode_some_int16s( packet+5, osHandles->Telemetry.pid_values, 9);
+						osHandles->Telemetry.just_updated = PIDs_ARE_CURRENT;
 						break;
 					}
 					
