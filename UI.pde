@@ -59,7 +59,8 @@ void print_flying_display(OSHANDLES * osHandles){
 	
 	if (osHandles->last_mode != TRANSMITTING) { //we just started transmitting then.
 		osHandles->quad_settings_status = NO_COMM_YET;
-		send_quadcopter_settings();
+		//send_quadcopter_settings();
+		//delay(10);
 		send_byte_packet(SETTINGS_COMM,(uint8_t) 'p'); //send request for pid values.
 		return;
 	}
@@ -70,14 +71,14 @@ void print_flying_display(OSHANDLES * osHandles){
 	}
 	else { 
 		if (!((millis()/300)%4)) { //keep requesting values, not to often though.
+			if (osHandles->quad_settings_status == SETTINGS_MISMATCH) {
+				send_quadcopter_settings(); //send updated values.
+				delay(10);
+			}
 			send_byte_packet(SETTINGS_COMM,(uint8_t) 'p'); //send request for pid values.
-			//++osHandles->Telemetry.just_updated;
 		}
 		if (osHandles->quad_settings_status == SETTINGS_MISMATCH) printPGMStr(str_sett_mismatch);
 		else printPGMStr(str_no_comm);
-		//lcd.print(" [sent");
-		//lcd.print( (osHandles->Telemetry.just_updated)-PIDs_CHANGED );
-		//lcd.print("]    ");
 	}
 }
 

@@ -64,19 +64,18 @@ void loop(){
 				send_int16_packet( USER_CONTROL, FULL_REMOTE, osHandles.current_analogs.x, osHandles.current_analogs.y, osHandles.current_analogs.ya, osHandles.current_analogs.th );
 	
 			}
-			if ((current_time - last_lcd_update) > 200){
-				last_lcd_update = current_time;
-				print_flying_display( &osHandles );
-			}
 			//analogWrite(lcd_backlight_pin, ((current_time/10/100)%2)?(millis()/10)%100+155:(255-(millis()/10)%100));
 		}
-		else if ((osHandles.mode == MENU) && ((current_time - last_lcd_update)) > 200){
-			last_lcd_update = current_time;
-			print_menu_display( &osHandles );
+		
+		//runs the flight display first thing when going into transmiting mode:
+		if (osHandles.mode == TRANSMITTING && (osHandles.last_mode != TRANSMITTING)) {
+			print_flying_display( &osHandles ); last_lcd_update = current_time; 
 		}
-		else if ((osHandles.mode == STANDBY) && ((current_time - last_lcd_update)) > 300){
+		if ((current_time - last_lcd_update) > 200){
 			last_lcd_update = current_time;
-			print_standby_display( &osHandles );
+			if 		(osHandles.mode == MENU) 			print_menu_display( &osHandles );
+			else if	(osHandles.mode == TRANSMITTING) 	print_flying_display( &osHandles );
+			else if	(osHandles.mode == STANDBY)			print_standby_display( &osHandles );
 		}
 		if ((osHandles.mode != TRANSMITTING) && (current_time%5000 == 0)){
 			send_byte_packet(SETTINGS_COMM,(uint8_t) 'm',0);

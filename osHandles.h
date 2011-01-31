@@ -27,7 +27,7 @@ typedef struct  {
 } Sticks;
 
 /*-- for PID storage --*/
-#define NUM_PID_VALUES 9 //how many PID int16_t's there are
+#define NUM_SETTING_VALUES 10 //how many PID int16_t's there are
 
 //for quad_settings_status
 #define NO_COMM_YET 0
@@ -43,7 +43,7 @@ typedef struct  {
 typedef struct
 {
 	/*struct {
-		int16_t pid_values[NUM_PID_VALUES];
+		int16_t pid_values[NUM_SETTING_VALUES];
 		uint8_t just_updated;
 	} Telemetry;*/
 	uint8_t quad_settings_status;

@@ -11,11 +11,11 @@ void readSerialCommand(OSHANDLES * osHandles){
 			if (packet[2] == SETTINGS_COMM){			
 				switch (packet[3])
 				{
-					case QUAD_2_REMOTE_PIDS: //recieve the PID values sent by the quad.
+					case QUAD_2_REMOTE_SETTINGS: //recieve the PID values sent by the quad.
 					{
-						int16_t recieved_pids[NUM_PID_VALUES] = {0};
-						decode_some_int16s( packet+5, recieved_pids, NUM_PID_VALUES);
-						if (compare_quad_PIDs_to_eeprom(recieved_pids))
+						int16_t recieved_settings[NUM_SETTING_VALUES] = {0};
+						decode_some_int16s( packet+5, recieved_settings, NUM_SETTING_VALUES);
+						if (compare_quad_settings_to_eeprom(recieved_settings))
 							{ osHandles->quad_settings_status = CORRECT_SETTINGS; }
 						else 
 							{ osHandles->quad_settings_status = SETTINGS_MISMATCH; }

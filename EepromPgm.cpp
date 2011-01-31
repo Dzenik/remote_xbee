@@ -8,6 +8,9 @@
 
 typedef uint8_t byte;  //would be redundant.. if this weren't a header file.
 
+/*----- variables just within scope for this library -----*/
+uint8_t quad_settings_starting_location; //stores what memory address we start saving PIDs at.
+
 
 //This function will write a 2 byte integer to the eeprom at the specified address and address + 1
 void EEPROMWriteInt(int p_address, int p_value){
@@ -39,10 +42,12 @@ void readSettings(OSHANDLES * osHandles){
 	retrive_int16_array_eeprom( osHandles->calib_low_vals,  4, ANALOG_CALIB_L_START);
 	retrive_int16_array_eeprom( osHandles->calib_high_vals, 4, ANALOG_CALIB_H_START);
 	
-	//retrive_int16_array_eeprom( osHandles->Telemetry.pid_values, NUM_PID_VALUES, PID_VALS_START_ADDR);
+	//retrive_int16_array_eeprom( osHandles->Telemetry.pid_values, NUM_SETTING_VALUES, PID_0_VALS_START_ADDR);
 
 	osHandles->transmit_rate = EEPROMReadInt(TRANS_RATE_ADDR);
 	osHandles->mode = STANDBY;
+	
+	set_quad_setting_profile( EEPROM.read(PID_PROFILE_ADDRESS) );
 	
 	//lcd startup//
 	pinMode(lcd_backlight_pin, OUTPUT);
@@ -79,8 +84,13 @@ void reset_eeprom(OSHANDLES * osHandles) {
 	osHandles->transmit_rate = 100;  //default transmit rate
 	EEPROMWriteInt(48, osHandles->transmit_rate);  //save it
 	
-	int16_t default_PIDs[NUM_PID_VALUES] = {35,0,0,  35,0,0, 100,07,0};
-	store_int16_array_eeprom( default_PIDs, NUM_PID_VALUES, PID_VALS_START_ADDR );
+	EEPROM.write(PID_PROFILE_ADDRESS,0);
+	set_quad_setting_profile(0);
+	
+	int16_t default_settings[NUM_SETTING_VALUES] = {400,005,0, 400,005,0, 840,010,0, 0};
+	store_int16_array_eeprom( default_settings, NUM_SETTING_VALUES, PROFILE_0_START_ADDR );
+	store_int16_array_eeprom( default_settings, NUM_SETTING_VALUES, PROFILE_1_START_ADDR );
+	store_int16_array_eeprom( default_settings, NUM_SETTING_VALUES, PROFILE_2_START_ADDR );
 }
 
 
@@ -88,37 +98,47 @@ void reset_eeprom(OSHANDLES * osHandles) {
 
 /*-------- quad settings area ---------*/
 
-void send_quadcopter_settings(){
-	int16_t pid_values[NUM_PID_VALUES] = {0};
-		
-	retrive_int16_array_eeprom( pid_values, NUM_PID_VALUES, PID_VALS_START_ADDR );
-	
-	send_some_int16s(SETTINGS_COMM, REMOTE_2_QUAD_PIDS, pid_values, NUM_PID_VALUES);
+void set_quad_setting_profile(uint8_t profile_number){
+	uint8_t profile_locations[] = {PROFILE_0_START_ADDR, PROFILE_1_START_ADDR, PROFILE_2_START_ADDR};
+	if (profile_number > sizeof(profile_locations)) return; //error checking.
+	quad_settings_starting_location = profile_locations[profile_number];
+	EEPROM.write(PID_PROFILE_ADDRESS, profile_number);
 }
 
-void store_pid_to_eeprom(uint8_t which_pid, int16_t what_value){
-	uint8_t address = which_pid*2 + PID_VALS_START_ADDR;			//get address to store to
-	if (address > (NUM_PID_VALUES*2+PID_VALS_START_ADDR)) return;	//error checking.
+void send_quadcopter_settings(){
+	int16_t quad_settings[NUM_SETTING_VALUES] = {0};
+		
+	retrive_int16_array_eeprom( quad_settings, NUM_SETTING_VALUES, quad_settings_starting_location );
+		
+	send_some_int16s(SETTINGS_COMM, REMOTE_2_QUAD_SETTINGS, quad_settings, NUM_SETTING_VALUES);
+}
+
+void store_setting_to_eeprom(uint8_t which_pid, int16_t what_value){
+	uint8_t address = which_pid*2 + quad_settings_starting_location;			//get address to store to
+	if (address > (NUM_SETTING_VALUES*2+quad_settings_starting_location)) return;	//error checking.
 	EEPROMWriteInt(address, what_value);
 }
 
-int16_t get_pid_from_eeprom(uint8_t which_pid ){
-	uint8_t address = which_pid*2 + PID_VALS_START_ADDR;			//get address to store to
-	if (address > (NUM_PID_VALUES*2+PID_VALS_START_ADDR)) return 0;	//error checking.
+int16_t get_setting_from_eeprom(uint8_t which_setting ){
+	uint8_t address = which_setting*2 + quad_settings_starting_location;			//get address to store to
+	if (address > (NUM_SETTING_VALUES*2+quad_settings_starting_location)) return 0;	//error checking.
 	return EEPROMReadInt(address);
 }
 
-uint8_t compare_quad_PIDs_to_eeprom(int16_t * recived_pids) {
+uint8_t get_setting_profile( void ){ return EEPROM.read(PID_PROFILE_ADDRESS); }
+
+uint8_t compare_quad_settings_to_eeprom(int16_t * recived_pids) {
 	uint8_t success = 1;
-	for (uint8_t i = 0; i<NUM_PID_VALUES; i++){
-		int16_t eeprom_val = get_pid_from_eeprom(i);
+	for (uint8_t i = 0; i<NUM_SETTING_VALUES; i++){
+		int16_t eeprom_val = get_setting_from_eeprom(i);
 		
-		Serial.print("recieved[");
+		//--debug serial output--
+		/*Serial.print("recieved[");
 		Serial.print(i);
 		Serial.print("] = ");
 		Serial.print(recived_pids[i]);
 		Serial.print(" vs ");
-		Serial.println(eeprom_val);
+		Serial.println(eeprom_val);*/
 		
 		if (recived_pids[i] != eeprom_val) success = 0;
 	}

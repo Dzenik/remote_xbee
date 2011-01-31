@@ -7,14 +7,15 @@ const unsigned short max_menu_x_nav = 3;
 unsigned int max_y_nav = 1000, min_y_nav = 0;
 
 // main menu (Flash based string table. otherwise the strings will take up ram.)
-prog_char menu_0[] PROGMEM =   " -PID adjust    ";
-prog_char menu_1[] PROGMEM =   " -zero sensors  ";
-prog_char menu_2[] PROGMEM =   " -fancy startup ";
-prog_char menu_3[] PROGMEM =   " -reset eeprom  ";
-prog_char menu_4[] PROGMEM =   " -quad telem mode";
-prog_char menu_5[] PROGMEM =   " -transmit rate ";
-prog_char menu_6[] PROGMEM =   " -lcd brightness";
-PGM_P PROGMEM menuStrings[] = {menu_0, menu_1, menu_2, menu_3, menu_4, menu_5, menu_6 };
+prog_char menu_0[] PROGMEM =   " -Setting adjust";
+prog_char menu_1[] PROGMEM =   " -SETs profile  ";
+prog_char menu_2[] PROGMEM =   " -zero sensors  ";
+prog_char menu_3[] PROGMEM =   " -fancy startup ";
+prog_char menu_4[] PROGMEM =   " -reset eeprom  ";
+prog_char menu_5[] PROGMEM =   " -quad telem mode";
+prog_char menu_6[] PROGMEM =   " -transmit rate ";
+prog_char menu_7[] PROGMEM =   " -lcd brightness";
+PGM_P PROGMEM menuStrings[] = {menu_0, menu_1, menu_2, menu_3, menu_4, menu_5, menu_6,menu_7 };
 const byte n_choices = sizeof(menuStrings) / sizeof(char *) - 1;
 
 //quadcopter adjust menu
@@ -27,15 +28,18 @@ prog_char pam_5[] PROGMEM =   "  -d roll       ";
 prog_char pam_6[] PROGMEM =   "  -p yaw        ";
 prog_char pam_7[] PROGMEM =   "  -i yaw        ";
 prog_char pam_8[] PROGMEM =   "  -d yaw        ";
-PGM_P PROGMEM pid_adj_strings[] = {	pam_0,pam_1,pam_2,pam_3,pam_4,pam_5,pam_6,pam_7,pam_8 };
-const byte num_of_pid_adj_strings = sizeof(pid_adj_strings) / sizeof(char *) - 1;
+prog_char pam_9[] PROGMEM =   "  -mode X:0, +:1";
+prog_char pam_10[] PROGMEM =  "  -LED mode     ";
+PGM_P PROGMEM setting_adj_strings[] = 
+		{ pam_0,pam_1,pam_2,pam_3,pam_4,pam_5,pam_6,pam_7,pam_8,pam_9,pam_10 };
+const byte num_of_setting_adj_strings = sizeof(setting_adj_strings) / sizeof(char *) - 1;
 
 prog_char strConfigMenu[] PROGMEM =	"Config menu     ";
 prog_char strWhatRate[] PROGMEM =		"What rate?      ";
 prog_char str_what_bright[] PROGMEM =	"What brightness?";
+prog_char strAreYouSure[] PROGMEM =		"are you sure?   ";
 prog_char strSaved[] PROGMEM =		"saved";
 prog_char wait_pid[] PROGMEM =		"waiting for PIDs";
-prog_char success[] PROGMEM =		"   -SUCCESS!-   ";
 
 void print_menu_display(OSHANDLES * osHandles){
 	//// print header only in root menu ////
@@ -54,34 +58,51 @@ void print_menu_display(OSHANDLES * osHandles){
 			case 0: //adjust PID gains
 			{
 				if (menu_x_nav == 1){
-					max_y_nav = num_of_pid_adj_strings;
+					max_y_nav = num_of_setting_adj_strings;
 					min_y_nav = 0;
 					lcd.setCursor(0,0);
 					printPGMStr(menu_0);
 					lcd.setCursor(0,1);
-					printPGMStr(pid_adj_strings[menu_y_nav[1]]);
+					printPGMStr(setting_adj_strings[menu_y_nav[1]]);
 				}
 				else if (menu_x_nav == 2){
 					lcd.setCursor(0,0);
-					printPGMStr(pid_adj_strings[menu_y_nav[1]]);
+					printPGMStr(setting_adj_strings[menu_y_nav[1]]);
 					lcd.setCursor(0,0);
-					max_y_nav = 10000;
-					min_y_nav = 0;
-					if (last_menu_x_nav != menu_x_nav)
-						{ menu_y_nav[2] = get_pid_from_eeprom(menu_y_nav[1]); }
-					lcd.setCursor(0,1);
-					lcd.print(" ");
-					lcd_print_float_1(menu_y_nav[2]);
-					//lcd.print(" was");
-					//lcd_print_float_1(osHandles->Telemetry.pid_values[menu_y_nav[1]]/10);
+					if (menu_y_nav[1] < 9){ //PID adjustment 
+						max_y_nav = 10000;
+						min_y_nav = 0;
+						if (last_menu_x_nav != menu_x_nav)
+							{ menu_y_nav[2] = get_setting_from_eeprom(menu_y_nav[1]); }
+						lcd.setCursor(0,1);
+						lcd.print(" ");
+						lcd_print_float_1(menu_y_nav[2]);
+					}
+					else {  //settings
+						max_y_nav = 7; min_y_nav = 0;
+						if (last_menu_x_nav != menu_x_nav) { //Flight mode or LED mode?
+								if (menu_y_nav[1] == 9) {menu_y_nav[2] = get_setting_from_eeprom(9) >> 8;} 
+								else menu_y_nav[2] = get_setting_from_eeprom(9) & 0xFF; //LED settings
+							}
+						lcd.setCursor(1,1); lcd.print(menu_y_nav[2]);
+					}
 				}
 				else if (menu_x_nav == 3){
-					store_pid_to_eeprom(menu_y_nav[1], menu_y_nav[2]);
-					
-					printPGMStr(success);
+					if (menu_y_nav[1] < 9){ //PID adjustment 
+						store_setting_to_eeprom(menu_y_nav[1], menu_y_nav[2]);
+					}
+					else {  //settings
+						int16_t setting; 
+						if (menu_y_nav[1] == 9) { //Flight mode
+							setting = (get_setting_from_eeprom(9) & 0xFF) + (menu_y_nav[2] << 8); 
+						}
+						else { //LED settings
+							setting = (get_setting_from_eeprom(9) & 0xFF00) + menu_y_nav[2];
+						}
+						store_setting_to_eeprom(9, setting);
+					}
+					printPGMStr(strSaved,5);
 					delay(1000);
-					menu_y_nav[0] = 0;
-					menu_y_nav[1] = 0;
 					menu_y_nav[2] = 0;
 					menu_x_nav = 0;
 					return;					
@@ -89,13 +110,34 @@ void print_menu_display(OSHANDLES * osHandles){
 				
 				break;
 				}
-			case 1:  //zero sensors
+			case 1:  //change PID profile
+			{
+				max_y_nav = 2;
+				min_y_nav = 0;
+				if (menu_x_nav == 1) {
+					if (last_menu_x_nav != menu_x_nav){
+						menu_y_nav[1] = get_setting_profile();
+						lcd.clear();
+					}
+					lcd.setCursor(1,7);
+					lcd.print(menu_y_nav[1]);
+				}
+				else if (menu_x_nav == 2){
+					set_quad_setting_profile(menu_y_nav[1]);
+					lcd.setCursor(0,0);
+					printPGMStr(strSaved,5);
+					delay(500);
+					menu_x_nav = 0; menu_y_nav[0] = 0; menu_y_nav[1] = 0;
+				}
+				break;
+			}
+			case 2:  //zero sensors
 			{
 				send_byte_packet(SETTINGS_COMM,(uint8_t) 'z');
 				menu_x_nav = 0;
 				break;
 			}
-			case 2:  //fancy startup
+			case 3:  //fancy startup
 			{
 				uint8_t current = EEPROM.read(45);
 				EEPROM.write(45, !current);
@@ -104,22 +146,27 @@ void print_menu_display(OSHANDLES * osHandles){
 				menu_x_nav = 0;
 				break;
 			}
-			case 3:  //reset eeprom
+			case 4:  //reset eeprom
 			{
-				reset_eeprom( osHandles );
-				printPGMStr(strSaved);
-				delay(1000);
-				menu_x_nav = 0;
-				osHandles->mode = STANDBY;
+				if (menu_x_nav == 1){
+					printPGMStr(strAreYouSure);
+				}
+				else if (menu_x_nav == 2){
+					reset_eeprom( osHandles );
+					printPGMStr(strSaved);
+					delay(1000);
+					menu_x_nav = 0;
+					osHandles->mode = STANDBY;
+				}
 				break;
 			}
-			case 4:  //toggle quad telem mode
+			case 5:  //toggle quad telem mode
 			{
 				send_byte_packet(SETTINGS_COMM,(uint8_t) 'r');
 				menu_x_nav = 0;
 				break;
 			}
-			case 5:  //adjust transmit rate
+			case 6:  //adjust transmit rate
 			{
 				max_y_nav = 10000;
 				min_y_nav = 0;
@@ -144,7 +191,7 @@ void print_menu_display(OSHANDLES * osHandles){
 				}
 				break;
 				}
-			case 6:  //adjust display brightness
+			case 7:  //adjust display brightness
 			{
 				max_y_nav = 255/8;
 				min_y_nav = 0;
