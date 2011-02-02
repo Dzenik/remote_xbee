@@ -73,8 +73,6 @@ void print_menu_display(OSHANDLES * osHandles){
 					if (menu_y_nav[1] == 12){ min_y_nav = 0; max_y_nav = 7; }  //led mode
 					if (last_menu_x_nav != menu_x_nav) {
 						menu_y_nav[2] = get_setting_from_eeprom(menu_y_nav[1]);
-						if ((menu_y_nav[1]<9) && ((menu_y_nav[1]!=1) || (menu_y_nav[1]!=4) || (menu_y_nav[1]!=7)))
-							{ menu_y_nav[2] = menu_y_nav[2] / 10; } //scale up for P and D
 					}
 					lcd.setCursor(0,1);
 					lcd.print(' ');
@@ -82,8 +80,8 @@ void print_menu_display(OSHANDLES * osHandles){
 					else { lcd.print(menu_y_nav[2]); lcd.print(' '); }  //regular integers
 				}
 				else if (menu_x_nav == 3){
-					if ((menu_y_nav[1]<9) && ((menu_y_nav[1]!=1) || (menu_y_nav[1]!=4) || (menu_y_nav[1]!=7)))
-						{ menu_y_nav[2] = menu_y_nav[2] * 10; } //scale up for P and D
+					if (((menu_y_nav[1]==9)||(menu_y_nav[1]==10))&&(menu_y_nav[2]==0)) //TX scale factor == 0
+						{menu_y_nav[2] = 1;} //don't divide by 0.
 					store_setting_to_eeprom(menu_y_nav[1], menu_y_nav[2]);
 					print_PGM_line(strSaved, 0);
 					delay(1000);
