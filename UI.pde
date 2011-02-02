@@ -1,12 +1,11 @@
 #include "osHandles.h"
 
 
-prog_char str_standby_mode[] PROGMEM =		"Standby Mode    ";
+prog_char str_standby_mode[] PROGMEM =		"Standby Mode";
 uint8_t ui_x_nav = 0, max_ui_x_nav = 4;
 
 void print_standby_display(OSHANDLES * osHandles){
-	lcd.setCursor(0,0);
-	printPGMStr(str_standby_mode);
+	print_PGM_line(str_standby_mode,0);
 	lcd.setCursor(0,1);
 	switch (ui_x_nav){
 		/*case 0:
@@ -47,14 +46,13 @@ void print_standby_display(OSHANDLES * osHandles){
 
 
 
-prog_char str_transmit_mode[] PROGMEM =		"Transmit Mode   ";
+prog_char str_transmit_mode[] PROGMEM =		"Transmit Mode";
 prog_char str_sett_mismatch[] PROGMEM =		"  data mismatch ";
-prog_char str_no_comm[] PROGMEM =			"  no comm       ";
-prog_char str_settings_OK[] PROGMEM =		"   settings OK  ";
+prog_char str_no_comm[] PROGMEM =			"  no comm";
+prog_char str_settings_OK[] PROGMEM =		"   settings OK";
 
 void print_flying_display(OSHANDLES * osHandles){
-	lcd.setCursor(0,0);
-	printPGMStr(str_transmit_mode);
+	print_PGM_line(str_transmit_mode,0);
 	lcd.setCursor(0,1);
 	
 	if (osHandles->last_mode != TRANSMITTING) { //we just started transmitting then.

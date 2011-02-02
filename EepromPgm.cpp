@@ -82,12 +82,12 @@ void reset_eeprom(OSHANDLES * osHandles) {
 	analogWrite(lcd_backlight_pin, 255);  //write changes
 	
 	osHandles->transmit_rate = 100;  //default transmit rate
-	EEPROMWriteInt(48, osHandles->transmit_rate);  //save it
+	EEPROMWriteInt(TRANS_RATE_ADDR, osHandles->transmit_rate);  //save it
 	
 	EEPROM.write(PID_PROFILE_ADDRESS,0);
 	set_quad_setting_profile(0);
 	
-	int16_t default_settings[NUM_SETTING_VALUES] = {400,005,0, 400,005,0, 840,010,0, 0};
+	int16_t default_settings[NUM_SETTING_VALUES] = {400,5,0, 400,5,0, 840,1,0, 20,20, 0, 7};
 	store_int16_array_eeprom( default_settings, NUM_SETTING_VALUES, PROFILE_0_START_ADDR );
 	store_int16_array_eeprom( default_settings, NUM_SETTING_VALUES, PROFILE_1_START_ADDR );
 	store_int16_array_eeprom( default_settings, NUM_SETTING_VALUES, PROFILE_2_START_ADDR );
@@ -109,12 +109,12 @@ void send_quadcopter_settings(){
 	int16_t quad_settings[NUM_SETTING_VALUES] = {0};
 		
 	retrive_int16_array_eeprom( quad_settings, NUM_SETTING_VALUES, quad_settings_starting_location );
-		
+	
 	send_some_int16s(SETTINGS_COMM, REMOTE_2_QUAD_SETTINGS, quad_settings, NUM_SETTING_VALUES);
 }
 
-void store_setting_to_eeprom(uint8_t which_pid, int16_t what_value){
-	uint8_t address = which_pid*2 + quad_settings_starting_location;			//get address to store to
+void store_setting_to_eeprom(uint8_t which_setting, int16_t what_value){
+	uint8_t address = which_setting*2 + quad_settings_starting_location;			//get address to store to
 	if (address > (NUM_SETTING_VALUES*2+quad_settings_starting_location)) return;	//error checking.
 	EEPROMWriteInt(address, what_value);
 }
@@ -127,20 +127,20 @@ int16_t get_setting_from_eeprom(uint8_t which_setting ){
 
 uint8_t get_setting_profile( void ){ return EEPROM.read(PID_PROFILE_ADDRESS); }
 
-uint8_t compare_quad_settings_to_eeprom(int16_t * recived_pids) {
+uint8_t compare_quad_settings_to_eeprom(int16_t * recived_settings) {
 	uint8_t success = 1;
 	for (uint8_t i = 0; i<NUM_SETTING_VALUES; i++){
 		int16_t eeprom_val = get_setting_from_eeprom(i);
 		
 		//--debug serial output--
-		/*Serial.print("recieved[");
+		Serial.print("recieved[");
 		Serial.print(i);
 		Serial.print("] = ");
-		Serial.print(recived_pids[i]);
+		Serial.print(recived_settings[i]);
 		Serial.print(" vs ");
-		Serial.println(eeprom_val);*/
+		Serial.println(eeprom_val);
 		
-		if (recived_pids[i] != eeprom_val) success = 0;
+		if (recived_settings[i] != eeprom_val) success = 0;
 	}
 	return success;
 }

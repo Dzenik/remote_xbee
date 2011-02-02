@@ -26,9 +26,6 @@ typedef struct  {
 	uint16_t y;
 } Sticks;
 
-/*-- for PID storage --*/
-#define NUM_SETTING_VALUES 10 //how many PID int16_t's there are
-
 //for quad_settings_status
 #define NO_COMM_YET 0
 #define CORRECT_SETTINGS 1
@@ -61,8 +58,7 @@ typedef struct
 }OSHANDLES;
 
 
-// needs it's own declaration so legnth is optional
-void printPGMStr(const prog_char* thisStr, uint8_t n = 16);
+uint8_t printPGMStr(const prog_char* thisStr); //declared here.. defined in menu.pde
 
 
 #endif /* OSHANDLES_H */
